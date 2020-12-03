@@ -28,22 +28,22 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-
+        //get JWT from header
         final String authorizationHeader = request.getHeader("Authorization");
 
         String username = null;
         String jwt = null;
-
+        //get JWT and Username
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             jwt = authorizationHeader.substring(7);
             username = jwtUtil.extractUsername(jwt);
         }
 
-
+        //context contain the information of currently user (principal)
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-
+            //get user details
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(username);
-
+            //test if token is valid
             if (jwtUtil.validateToken(jwt, userDetails)) {
 
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
@@ -53,6 +53,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
             }
         }
+        //proceeding to the next element in the chain
         chain.doFilter(request, response);
     }
 

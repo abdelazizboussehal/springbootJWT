@@ -1,5 +1,12 @@
 package io.javabrains.springsecurityjwt;
 
+/*
+create auth root
+create websecurityprovider
+create usrdetailsservice
+create filter
+ */
+
 import io.javabrains.springsecurityjwt.filters.JwtRequestFilter;
 import io.javabrains.springsecurityjwt.models.AuthenticationRequest;
 import io.javabrains.springsecurityjwt.models.AuthenticationResponse;
@@ -57,6 +64,7 @@ class HelloWorldController {
 	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest) throws Exception {
 
 		try {
+			//Testing if user has a right information with userDeatils services
 			authenticationManager.authenticate(
 					new UsernamePasswordAuthenticationToken(authenticationRequest.getUsername(), authenticationRequest.getPassword())
 			);
@@ -65,10 +73,10 @@ class HelloWorldController {
 			throw new Exception("Incorrect username or password", e);
 		}
 
-
+		//get user details for create JWT
 		final UserDetails userDetails = userDetailsService
 				.loadUserByUsername(authenticationRequest.getUsername());
-
+		// Create JWT
 		final String jwt = jwtTokenUtil.generateToken(userDetails);
 
 		return ResponseEntity.ok(new AuthenticationResponse(jwt));
@@ -79,21 +87,22 @@ class HelloWorldController {
 @EnableWebSecurity
 class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
-	private UserDetailsService myUserDetailsService;
+	private MyUserDetailsService myUserDetailsService;
 	@Autowired
 	private JwtRequestFilter jwtRequestFilter;
-
+	// Use user details authenticate
 	@Autowired
 	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
 		auth.userDetailsService(myUserDetailsService);
 	}
-
+	//Should has hashage code
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		return NoOpPasswordEncoder.getInstance();
 	}
 
 	@Override
+	//for authenticate manager in root
 	@Bean
 	public AuthenticationManager authenticationManagerBean() throws Exception {
 		return super.authenticationManagerBean();
@@ -105,7 +114,8 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 				.authorizeRequests().antMatchers("/authenticate").permitAll().
 						anyRequest().authenticated().and().
 						exceptionHandling().and().sessionManagement()
-				.sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+				.sessionCreationPolicy(SessionCreationPolicy.STATELESS);//Disable session for jwt
+		// Add costume filter
 		httpSecurity.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
 	}
